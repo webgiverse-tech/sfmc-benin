@@ -71,7 +71,7 @@ text
 
 ### 1. Cloner le dépôt
 ```bash
-git clone https://github.com/votre-username/sfmc-benin.git
+git clone https://github.com/webgiverse-tech/sfmc-benin.git
 cd sfmc-benin
 2. Installer les dépendances backend
 Pour chaque dossier de service dans backend/, exécutez :
