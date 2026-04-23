@@ -1,0 +1,28 @@
+# Dépendances
+node_modules/
+.packages
+package-lock.json
+
+# Environnement (secrets)
+.env
+.env.local
+
+# Bases de données SQLite
+*.db
+*.db-journal
+
+# Flutter
+.dart_tool/
+.packages
+build/
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
