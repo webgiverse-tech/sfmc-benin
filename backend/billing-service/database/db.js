@@ -88,26 +88,29 @@ async function initDatabase() {
     }
 }
 
+// Dans billing-service/database/db.js — seedDatabase() corrigée
 async function seedDatabase() {
-    // Créer quelques factures de test basées sur les commandes existantes (order_id 1 à 5)
+    // Insérer les factures sans forcer le statut (le trigger s'en charge)
     const factures = [
-        { order_id: 1, client_id: 3, montant_total: 65000, statut: 'unpaid', date_echeance: '2026-05-15' },
-        { order_id: 2, client_id: 4, montant_total: 255000, statut: 'partial', date_echeance: '2026-05-10' },
-        { order_id: 3, client_id: 3, montant_total: 50000, statut: 'paid', date_echeance: '2026-04-30' },
-        { order_id: 4, client_id: 4, montant_total: 90000, statut: 'unpaid', date_echeance: '2026-05-20' }
-    ];
-
-    const paiements = [
-        { facture_id: 2, montant: 100000, mode: 'virement', reference: 'VIR-001' },
-        { facture_id: 3, montant: 50000, mode: 'especes', reference: null }
+        { order_id: 1, client_id: 3, montant_total: 65000, date_echeance: '2026-05-15' },
+        { order_id: 2, client_id: 4, montant_total: 255000, date_echeance: '2026-05-10' },
+        { order_id: 3, client_id: 3, montant_total: 50000, date_echeance: '2026-04-30' },
+        { order_id: 4, client_id: 4, montant_total: 90000, date_echeance: '2026-05-20' }
     ];
 
     for (const f of factures) {
         await runAsync(
-            `INSERT INTO factures (order_id, client_id, montant_total, statut, date_echeance) VALUES (?, ?, ?, ?, ?)`,
-            [f.order_id, f.client_id, f.montant_total, f.statut, f.date_echeance]
+            `INSERT INTO factures (order_id, client_id, montant_total, date_echeance) 
+             VALUES (?, ?, ?, ?)`,
+            [f.order_id, f.client_id, f.montant_total, f.date_echeance]
         );
     }
+
+    // Les paiements déclenchent le trigger qui met à jour le statut automatiquement
+    const paiements = [
+        { facture_id: 2, montant: 100000, mode: 'virement', reference: 'VIR-2026-001' },
+        { facture_id: 3, montant: 50000, mode: 'especes', reference: null }
+    ];
 
     for (const p of paiements) {
         await runAsync(
@@ -116,7 +119,8 @@ async function seedDatabase() {
         );
     }
 
-    console.log(`✅ Factures et paiements de test créés.`);
+    console.log('✅ Factures et paiements de test créés (statuts calculés par trigger).');
 }
+
 
 module.exports = { db, runAsync, getAsync, allAsync, initDatabase };
