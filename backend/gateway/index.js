@@ -1,5 +1,7 @@
-// gateway/index.js — API Gateway SFMC Bénin (Express 4 + http-proxy-middleware v3)
+// gateway/index.js — API Gateway SFMC Bénin CORRIGÉ
 require('dotenv').config();
+require('dotenv').config({ path: '.env' });
+require('dotenv').config({ path: '../.env.shared', override: false });
 const express = require('express');
 const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 const jwt = require('jsonwebtoken');
@@ -17,8 +19,6 @@ if (!JWT_SECRET) {
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
     origin: function (origin, callback) {
-        // Autoriser les requêtes sans origine (outils comme curl, Postman)
-        // et toutes les origines localhost / 127.0.0.1 (quel que soit le port)
         if (!origin || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
             callback(null, true);
         } else {
@@ -27,15 +27,10 @@ app.use(cors({
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false   // Pas nécessaire pour l'authentification par token Bearer
+    credentials: false
 }));
 
-// ─── Body parsing (AVANT les proxies) ─────────────────────────────────────────
-// NOTE IMPORTANTE: on NE parse PAS le body globalement ici,
-// sinon le proxy ne peut plus le retransmettre.
-// On le parse uniquement pour la route /health et l'authentification locale.
-
-// ─── Routes de santé (aucun auth requis) ──────────────────────────────────────
+// ─── Routes de santé ──────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
     res.json({
         service: 'API Gateway SFMC Bénin',
@@ -55,7 +50,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// ─── Définition des services cibles ───────────────────────────────────────────
+// ─── Services cibles ──────────────────────────────────────────────────────────
 const services = {
     auth: 'http://localhost:3001',
     users: 'http://localhost:3002',
@@ -68,14 +63,17 @@ const services = {
     reporting: 'http://localhost:3009'
 };
 
-// ─── Fonction factory pour créer un proxy sécurisé ────────────────────────────
-function makeProxy(target, pathRewrite = {}) {
+// ─── Factory proxy AVEC pathRewrite ───────────────────────────────────────────
+// BUG FIX #1 : On ajoute pathRewrite pour supprimer le préfixe /api
+// Ex : /api/auth/login → /auth/login sur le Auth Service
+function makeProxy(target, apiPrefix) {
     return createProxyMiddleware({
         target,
         changeOrigin: true,
-        pathRewrite,
+        // Supprime le préfixe /api/xxx pour le remplacer par /xxx
+        pathRewrite: (path) => path.replace(`/api/${apiPrefix}`, `/${apiPrefix}`),
         on: {
-            proxyReq: fixRequestBody,   // Fix critique pour Express 4 + body parsé
+            proxyReq: fixRequestBody,
             error: (err, req, res) => {
                 console.error(`❌ Proxy error → ${target}:`, err.message);
                 if (!res.headersSent) {
@@ -90,7 +88,7 @@ function makeProxy(target, pathRewrite = {}) {
     });
 }
 
-// ─── Middleware d'authentification JWT ────────────────────────────────────────
+// ─── Middleware JWT ────────────────────────────────────────────────────────────
 const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -106,24 +104,25 @@ const authenticate = (req, res, next) => {
     }
 };
 
-// ─── ROUTES PUBLIQUES (sans authentification) ──────────────────────────────────
-// Ces routes DOIVENT être définies avant l'application de authenticate
-app.use('/api/auth/login', makeProxy(services.auth));
-app.use('/api/auth/register', makeProxy(services.auth));
+// ─── ROUTES PUBLIQUES (sans auth) ─────────────────────────────────────────────
+// BUG FIX #2 : On utilise des chemins exacts pour login/register
+// pour éviter que authenticate() bloque ces routes
+app.use('/api/auth/login', makeProxy(services.auth, 'auth'));
+app.use('/api/auth/register', makeProxy(services.auth, 'auth'));
 
-// ─── MIDDLEWARE AUTH (toutes les routes suivantes sont protégées) ──────────────
+// ─── AUTH MIDDLEWARE (routes protégées uniquement) ─────────────────────────────
 app.use(authenticate);
 
-// ─── ROUTES PROTÉGÉES ──────────────────────────────────────────────────────────
-app.use('/api/auth', makeProxy(services.auth));
-app.use('/api/users', makeProxy(services.users));
-app.use('/api/products', makeProxy(services.products));
-app.use('/api/inventory', makeProxy(services.inventory));
-app.use('/api/orders', makeProxy(services.orders));
-app.use('/api/production', makeProxy(services.production));
-app.use('/api/billing', makeProxy(services.billing));
-app.use('/api/notif', makeProxy(services.notif));
-app.use('/api/reporting', makeProxy(services.reporting));
+// ─── ROUTES PROTÉGÉES ─────────────────────────────────────────────────────────
+app.use('/api/auth', makeProxy(services.auth, 'auth'));
+app.use('/api/users', makeProxy(services.users, 'users'));
+app.use('/api/products', makeProxy(services.products, 'products'));
+app.use('/api/inventory', makeProxy(services.inventory, 'inventory'));
+app.use('/api/orders', makeProxy(services.orders, 'orders'));
+app.use('/api/production', makeProxy(services.production, 'production'));
+app.use('/api/billing', makeProxy(services.billing, 'billing'));
+app.use('/api/notif', makeProxy(services.notif, 'notif'));
+app.use('/api/reporting', makeProxy(services.reporting, 'reporting'));
 
 // ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {

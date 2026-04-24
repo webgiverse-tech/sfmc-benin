@@ -1,3 +1,6 @@
+// Charger d'abord le .env local, puis le partagé comme fallback
+require('dotenv').config({ path: '.env' });
+require('dotenv').config({ path: '../.env.shared', override: false });
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

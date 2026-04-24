@@ -1,5 +1,7 @@
 // index.js - Point d'entrée du User Service
 require('dotenv').config();
+require('dotenv').config({ path: '.env' });
+require('dotenv').config({ path: '../.env.shared', override: false });
 const express = require('express');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
