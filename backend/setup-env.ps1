@@ -1,0 +1,1 @@
+$JWT="sfmc_benin_super_secret_jwt_2026_key"

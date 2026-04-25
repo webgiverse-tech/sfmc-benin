@@ -1,20 +1,28 @@
-// middleware/errorHandler.js - Gestionnaire centralisé des erreurs
-/**
- * Middleware de gestion des erreurs.
- * Capture toutes les erreurs et renvoie une réponse JSON formatée.
- */
-function errorHandler(err, req, res, next) {
-    console.error('❌ Erreur serveur:', err.stack || err.message || err);
+// middleware/errorHandler.js — Gestionnaire d'erreurs global
+const errorHandler = (err, req, res, next) => {
+    console.error('❌ Erreur non gérée :', err.stack || err.message);
 
-    // Déterminer le code d'erreur HTTP approprié
-    const statusCode = err.statusCode || 500;
-    const errorMessage = err.message || 'Erreur interne du serveur';
+    // Erreur SQLite de contrainte unique (email déjà utilisé)
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(409).json({
+            success: false,
+            error: 'Cet email est déjà utilisé'
+        });
+    }
 
-    res.status(statusCode).json({
+    // Erreur JWT
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+            success: false,
+            error: 'Token invalide ou expiré'
+        });
+    }
+
+    // Erreur générique
+    res.status(err.status || 500).json({
         success: false,
-        error: errorMessage,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+        error: err.message || 'Erreur interne du serveur'
     });
-}
+};
 
 module.exports = errorHandler;

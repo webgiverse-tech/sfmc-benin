@@ -1,3 +1,4 @@
+// lib/core/widgets/custom_text_field.dart — VERSION CORRIGÉE
 import 'package:flutter/material.dart';
 import 'package:sfmc_flutter/core/constants/app_colors.dart';
 
@@ -15,6 +16,10 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onChanged;
   final String? initialValue;
 
+  // ── Paramètres manquants ajoutés ─────────────────────────────────────────
+  final Iterable<String>? autofillHints;
+  final void Function(String)? onFieldSubmitted;
+
   const CustomTextField({
     super.key,
     required this.label,
@@ -29,6 +34,9 @@ class CustomTextField extends StatelessWidget {
     this.enabled = true,
     this.onChanged,
     this.initialValue,
+    // ── Nouveaux paramètres ─────────────────────────────────────────────────
+    this.autofillHints,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -41,14 +49,45 @@ class CustomTextField extends StatelessWidget {
         hintText: hint,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.danger, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabled: enabled,
       ),
       validator: validator,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      maxLines: maxLines,
+      maxLines: obscureText ? 1 : maxLines,
       onChanged: onChanged,
+      // ── Nouveaux paramètres branchés sur TextFormField ───────────────────
+      autofillHints: autofillHints,
+      onFieldSubmitted: onFieldSubmitted,
+      textInputAction: onFieldSubmitted != null
+          ? TextInputAction.done
+          : TextInputAction.next,
     );
   }
 }

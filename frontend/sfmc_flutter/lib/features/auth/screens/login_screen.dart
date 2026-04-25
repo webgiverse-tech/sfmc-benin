@@ -203,109 +203,113 @@ class _LoginScreenState extends State<LoginScreen>
             // On ne peut pas forcer un vrai <form> HTML en Flutter Web,
             // mais on peut s'assurer que le widget Form englobe correctement
             // les deux champs pour que l'autocomplétion fonctionne.
+            // Remplacer le child du Form dans _buildRightPanel()
             child: Form(
               key: _formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // En-tête
-                  _buildFormHeader(),
-                  const SizedBox(height: 40),
-                  // Champ Email
-                  CustomTextField(
-                    label: 'Adresse email',
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Validators.validateEmail,
-                    prefixIcon: const Icon(
-                      Icons.email_outlined,
-                      color: AppColors.textSecondary,
-                    ),
-                    autofillHints: const [AutofillHints.email],
-                    onFieldSubmitted: (value) => _handleLogin(),
-                  ),
-                  const SizedBox(height: 16),
-                  // Champ Mot de passe
-                  CustomTextField(
-                    label: 'Mot de passe',
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    validator: Validators.validatePassword,
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: AppColors.textSecondary,
-                    ),
-                    autofillHints: const [AutofillHints.password],
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+              child: AutofillGroup(
+                // ← AutofillGroup enveloppe TOUT le formulaire
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // En-tête
+                    _buildFormHeader(),
+                    const SizedBox(height: 40),
+
+                    // Champ Email
+                    CustomTextField(
+                      label: 'Adresse email',
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: Validators.validateEmail,
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
                         color: AppColors.textSecondary,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                      autofillHints: const [AutofillHints.email],
+                      onFieldSubmitted: (_) => _handleLogin(),
                     ),
-                    onFieldSubmitted: (_) => _handleLogin(),
-                  ),
-                  const SizedBox(height: 8),
-                  // Mot de passe oublié (placeholder)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Mot de passe oublié ?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.primary,
+                    const SizedBox(height: 16),
+
+                    // Champ Mot de passe
+                    CustomTextField(
+                      label: 'Mot de passe',
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      validator: Validators.validatePassword,
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.textSecondary,
+                      ),
+                      autofillHints: const [AutofillHints.password],
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                      onFieldSubmitted: (_) => _handleLogin(),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Mot de passe oublié
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {},
+                        child: const Text(
+                          'Mot de passe oublié ?',
+                          style:
+                              TextStyle(fontSize: 13, color: AppColors.primary),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Bouton de connexion
-                  AutofillGroup(
-                    child: CustomButton(
+                    const SizedBox(height: 24),
+
+                    // Bouton de connexion
+                    CustomButton(
                       text: 'Se connecter',
                       onPressed: authProvider.isLoading ? null : _handleLogin,
                       isLoading: authProvider.isLoading,
                       width: double.infinity,
                       height: 52,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Lien vers inscription
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Pas encore de compte ? ",
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          "Créer un compte",
+                    const SizedBox(height: 16),
+
+                    // Lien vers inscription
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Pas encore de compte ? ",
                           style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
                             fontSize: 13,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            "Créer un compte",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 32),
                   // Comptes de démonstration
                   _buildDemoAccounts(),
@@ -314,6 +318,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }
